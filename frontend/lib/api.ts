@@ -28,7 +28,7 @@ export async function checkBackendHealth(): Promise<boolean> {
     const res = await fetch(`${BACKEND_URL}/api/health`, { signal: AbortSignal.timeout(1200) });
     if (res.ok) {
       const data = await res.json();
-      return data.status === "ok";
+      return data.status === "online";
     }
     return false;
   } catch (error) {
