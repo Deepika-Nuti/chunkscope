@@ -25,13 +25,39 @@ export interface FileMetadata {
  */
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${BACKEND_URL}/api/health`, { signal: AbortSignal.timeout(1200) });
-    if (res.ok) {
-      const data = await res.json();
-      return data.status === "online";
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 3000);
+
+    const response = await fetch(
+      `${BACKEND_URL}/api/health`,
+      {
+        method: "GET",
+        signal: controller.signal,
+        cache: "no-store",
+      }
+    );
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      console.warn("Backend health check failed:", response.status);
+      return false;
     }
-    return false;
-  } catch (error) {
+
+    const data = await response.json();
+
+    console.log("Backend health:", data);
+
+    // Accept either "online" or "ok"
+    return (
+      data?.status === "online" ||
+      data?.status === "ok"
+    );
+  } catch (err) {
+    console.warn("Backend offline:", err);
     return false;
   }
 }
