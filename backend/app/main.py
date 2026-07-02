@@ -28,7 +28,9 @@ app = FastAPI(title="ChunkScope API", version="2.0")
 # Setup CORS so Next.js frontend can connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://chunkscope.vercel.app",
+        "http://localhost:3000",],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
