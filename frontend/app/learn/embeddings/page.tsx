@@ -7,8 +7,10 @@ import SemanticNeighborhood from "../../../components/SemanticNeighborhood";
 import SemanticExplanationPanel from "../../../components/SemanticExplanationPanel";
 import { generateSemanticWorkspace } from "../../../lib/api";
 import { EmbeddedChunk } from "../../../lib/semantic-fallback";
+import { useGamification } from "../../../lib/useGamification";
 
 export default function LearnEmbeddingsPage() {
+  const { completeLesson } = useGamification();
   const [chunks, setChunks] = useState<any[]>([]);
   const [embeddedChunks, setEmbeddedChunks] = useState<EmbeddedChunk[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -37,12 +39,14 @@ export default function LearnEmbeddingsPage() {
       .finally(() => {
         setIsProcessing(false);
       });
+
+    completeLesson("embeddings", 100);
   }, []);
 
   const activeEmbeddedChunk = embeddedChunks.find((c) => parseInt(c.id) === selectedChunkId) || null;
 
   return (
-    <div className="flex-1 w-full max-w-5xl mx-auto py-10 px-8 space-y-12">
+    <div className="flex-1 w-full max-w-5xl mx-auto py-10 px-6 space-y-12 animate-fade-in select-none">
       {/* 1. Progress Banner */}
       <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase border-b border-border pb-3">
         <span>Lesson 4 of 7</span>
@@ -53,17 +57,17 @@ export default function LearnEmbeddingsPage() {
       <div className="space-y-2">
         <h2 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center">
           <HelpCircle className="h-4 w-4 mr-1 text-primary animate-pulse" />
-          Embeddings Lesson
+          Lesson 4: Vector Embeddings & Projections
         </h2>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-          Why are these chunks semantically similar?
+          How do vectors represent semantic meaning?
         </h1>
         <p className="text-xs text-muted-foreground max-w-xl">
-          An embedding is a vector (coordinates list) representing text meaning. Similar topics sit close together in the database, enabling queries to search by concepts instead of keywords.
+          An embedding is a list of coordinate weights representing text topics. Chunks covering similar concepts sit closely grouped in vector coordinates space.
         </p>
       </div>
 
-      {/* 3. Main Workspace Grid - 75% Width spacing rule */}
+      {/* 3. Main Workspace Grid */}
       {isProcessing ? (
         <div className="h-96 flex flex-col items-center justify-center text-xs text-muted-foreground bg-card/25 border border-border border-dashed rounded-2xl animate-pulse">
           <RefreshCw className="h-6 w-6 animate-spin text-primary mb-2" />
@@ -79,12 +83,12 @@ export default function LearnEmbeddingsPage() {
           }`}>
             <div className="space-y-1">
               <span className="font-extrabold text-[10px] uppercase tracking-widest block font-mono">
-                🎯 Hands-On Mission: Vector Coordinates
+                🎯 Hands-On Mission: Space Inspection
               </span>
               <p className="text-[11px] text-muted-foreground">
                 {selectedChunkId === 2
-                  ? "Success! You clicked Chunk #2 (NDA). Observe how the similarity score with the cardiology report falls to 0.1."
-                  : "Challenge: Click on the 'Legal Agreement' node (Chunk #2) in the orbit graph to audit its vector metrics."}
+                  ? "Success! You clicked Chunk #2 (NDA). Note how its similarity with cardiology falls to 0.12 (near zero)."
+                  : "Challenge: Click on the 'Legal Agreement' node (Chunk #2) in the proximity graph to analyze coordinates."}
               </p>
             </div>
             
@@ -96,10 +100,10 @@ export default function LearnEmbeddingsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Side: Orbit Node Graph (1 column) */}
+            {/* Left Side: Orbit Node Graph */}
             <div className="space-y-4">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                Local Proximity Orbit Graph
+                Local Proximity Projections Map
               </span>
               <SemanticNeighborhood
                 selectedChunk={activeEmbeddedChunk}
@@ -109,18 +113,18 @@ export default function LearnEmbeddingsPage() {
               />
             </div>
 
-          {/* Right Side: Explain pair comparisons (1 column) */}
-          <div className="space-y-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Compare Similarities
-            </span>
-            <SemanticExplanationPanel
-              chunks={embeddedChunks}
-              isLearningMode={true}
-            />
+            {/* Right Side: Explain pair comparisons */}
+            <div className="space-y-4">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                Concept Similarity Metrics
+              </span>
+              <SemanticExplanationPanel
+                chunks={embeddedChunks}
+                isLearningMode={true}
+              />
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* 4. Sticky Explanation Panel */}
@@ -128,10 +132,10 @@ export default function LearnEmbeddingsPage() {
         <div className="p-5 bg-secondary/15 border border-border/80 rounded-2xl text-xs space-y-3">
           <h4 className="font-extrabold text-[11px] uppercase tracking-wider text-foreground flex items-center">
             <Info className="h-4 w-4 mr-1 text-primary animate-pulse" />
-            What just happened?
+            What just happened? (Concept breakdown)
           </h4>
           <p className="text-muted-foreground text-[11.5px] leading-relaxed">
-            By mapping Deepika's chest pain and NDA clauses, the vector space splits into two clear clusters: **Medical Consult** (Chunks #0 and #1) and **Legal Agreement** (Chunks #2 and #3). When users query "heart pressure", vector similarity redirects directly to the medical cluster, bypassing the legal files completely.
+            By analyzing the text of cardiology files and NDA terms, the machine model computes high dimensional coordinates. When projected into 2D, they split into two clear clusters: **Medical Consult** (Chunks #0 and #1) and **Confidentiality Agreements** (Chunks #2 and #3). When a user queries "chest pain", similarity logic matches the medical coordinate pool, ignoring the NDA.
           </p>
         </div>
       )}

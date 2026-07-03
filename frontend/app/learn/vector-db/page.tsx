@@ -1,12 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowRight, ArrowLeft, HelpCircle, Database, GitBranch } from "lucide-react";
+import { useGamification } from "../../../lib/useGamification";
 
 export default function LearnVectorDbPage() {
+  const { completeLesson } = useGamification();
+
+  useEffect(() => {
+    completeLesson("vector-db", 100);
+  }, []);
+
   return (
-    <div className="flex-1 w-full max-w-4xl mx-auto py-10 px-8 space-y-12">
+    <div className="flex-1 w-full max-w-4xl mx-auto py-10 px-6 space-y-12 animate-fade-in select-none">
       {/* 1. Progress Banner */}
       <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase border-b border-border pb-3">
         <span>Lesson 5 of 7</span>
@@ -17,7 +24,7 @@ export default function LearnVectorDbPage() {
       <div className="space-y-2">
         <h2 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center">
           <HelpCircle className="h-4 w-4 mr-1 text-primary animate-pulse" />
-          Vector DB Lesson
+          Lesson 5: Vector DB
         </h2>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
           How does a Vector Database index chunks?

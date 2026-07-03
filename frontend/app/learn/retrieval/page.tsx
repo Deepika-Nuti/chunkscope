@@ -1,14 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowRight, ArrowLeft, HelpCircle, Layers, MessageSquare } from "lucide-react";
+import { useGamification } from "../../../lib/useGamification";
 
 export default function LearnRetrievalPage() {
+  const { completeLesson } = useGamification();
   const [topK, setTopK] = useState(2);
 
+  useEffect(() => {
+    completeLesson("retrieval", 100);
+  }, []);
+
   return (
-    <div className="flex-1 w-full max-w-4xl mx-auto py-10 px-8 space-y-12">
+    <div className="flex-1 w-full max-w-4xl mx-auto py-10 px-6 space-y-12 animate-fade-in select-none">
       {/* 1. Progress Banner */}
       <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase border-b border-border pb-3">
         <span>Lesson 6 of 7</span>
@@ -19,7 +25,7 @@ export default function LearnRetrievalPage() {
       <div className="space-y-2">
         <h2 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center">
           <HelpCircle className="h-4 w-4 mr-1 text-primary animate-pulse" />
-          Retrieval Lesson
+          Lesson 6: Retrieval & Top-K Context Selection
         </h2>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
           How does semantic retrieval work?

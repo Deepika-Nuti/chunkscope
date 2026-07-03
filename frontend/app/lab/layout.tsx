@@ -30,6 +30,8 @@ export default function LabLayout({ children }: { children: React.ReactNode }) {
             { path: "/lab/embeddings", label: "Embeddings" },
             { path: "/lab/vector-db", label: "Vector DB" },
             { path: "/lab/retrieval", label: "Retrieval" },
+            { path: "/lab/simulator", label: "RAG Simulator" },
+            { path: "/lab/practice", label: "Practice Lab" },
             { path: "/lab/evaluation", label: "Evaluation" },
           ].map((item) => {
             const isActive = pathname === item.path;

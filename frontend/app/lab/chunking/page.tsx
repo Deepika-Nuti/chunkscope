@@ -10,8 +10,10 @@ import {
   Terminal,
   Grid,
   RefreshCw,
-  Info
+  Info,
+  Play
 } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 
 import DocumentUpload from "../../../components/DocumentUpload";
 import StrategyCard from "../../../components/StrategyCard";
@@ -21,6 +23,8 @@ import AnalyticsBoard from "../../../components/AnalyticsBoard";
 import ChunkTimeline from "../../../components/ChunkTimeline";
 import CompareStrategies from "../../../components/CompareStrategies";
 import ChunkInspector from "../../../components/ChunkInspector";
+import WatchChunking from "../../../components/WatchChunking";
+import RetrievalMetrics from "../../../components/RetrievalMetrics";
 
 import { FileMetadata, chunkText, checkBackendHealth } from "../../../lib/api";
 import { Chunk, ChunkParams } from "../../../lib/fallback-engine";
@@ -29,6 +33,7 @@ export default function LabChunkingPage() {
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [documentMetadata, setDocumentMetadata] = useState<FileMetadata | null>(null);
   const [activeSidebarTab, setActiveSidebarTab] = useState<"controls" | "analysis">("controls");
+  const [isWatchOpen, setIsWatchOpen] = useState(false);
   
   // Strategy params
   const [strategy, setStrategy] = useState<string>("recursive");
@@ -202,6 +207,14 @@ export default function LabChunkingPage() {
                   onChange={setParams}
                   isLearningMode={false}
                 />
+
+                <button
+                  onClick={() => setIsWatchOpen(true)}
+                  className="w-full py-2.5 bg-primary text-primary-foreground border border-primary/20 hover:bg-primary/95 rounded-xl cursor-pointer font-extrabold text-[10.5px] flex items-center justify-center space-x-1.5 transition-all shadow-sm"
+                >
+                  <Play className="h-4 w-4 fill-current" />
+                  <span>Play Chunking Animation</span>
+                </button>
               </>
             )}
           </div>
@@ -210,6 +223,12 @@ export default function LabChunkingPage() {
         {/* Tab 2: Analysis View */}
         {activeSidebarTab === "analysis" && documentMetadata && (
           <div className="space-y-6">
+            <RetrievalMetrics
+              strategy={strategy}
+              chunkSize={params.chunk_size ?? 500}
+              chunkOverlap={params.chunk_overlap ?? 100}
+            />
+
             <AnalyticsBoard
               chunks={chunks}
               originalTextLength={documentMetadata.text.length}
@@ -298,6 +317,15 @@ export default function LabChunkingPage() {
         chunkSizeSetting={params.chunk_size}
         overlapSetting={params.chunk_overlap}
       />
+
+      {isWatchOpen && documentMetadata && (
+        <WatchChunking
+          originalText={documentMetadata.text}
+          strategy={strategy}
+          params={params}
+          onClose={() => setIsWatchOpen(false)}
+        />
+      )}
     </div>
   );
 }
