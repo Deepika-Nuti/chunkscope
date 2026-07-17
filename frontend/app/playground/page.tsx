@@ -19,7 +19,8 @@ import {
   Network,
   HelpCircle,
   Eye,
-  Settings2
+  Settings2,
+  CheckCircle2
 } from "lucide-react";
 
 import DocumentUpload from "../../components/DocumentUpload";
@@ -414,13 +415,13 @@ export default function Playground() {
       <main className="flex-1 w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-64px)] overflow-hidden">
         
         {/* ============================================================== */}
-        {/* COLUMN 1: SETUP & PARAMETERS (Width: 1/5)                      */}
+        {/* COLUMN 1: DOCUMENT INGESTION & USER JOURNEY (Width: 1/5)       */}
         {/* ============================================================== */}
-        <section className="lg:col-span-1 h-full overflow-y-auto pr-1 flex flex-col space-y-6 scrollbar-thin pb-6">
+        <section className="lg:col-span-1 h-full overflow-y-auto pr-1 flex flex-col space-y-6 scrollbar-thin pb-6 border-r border-border/40 pr-4">
           {/* Upload card */}
-          <div className={`space-y-2 transition-all ${wizardStep === 1 ? "ring-2 ring-primary p-1 rounded-xl" : ""}`}>
+          <div className={`space-y-2 transition-all ${wizardStep === 1 && isLearningMode ? "ring-2 ring-primary p-1 rounded-xl" : ""}`}>
             <div className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 text-primary" />
               <span>1. Load Document</span>
             </div>
             <DocumentUpload onUploadSuccess={handleUploadSuccess} isBackendOnline={isBackendOnline} />
@@ -430,8 +431,9 @@ export default function Playground() {
             <>
               {/* Document details box */}
               <div className="glass-panel p-4 rounded-xl border border-border bg-card/45 space-y-2 text-xs">
-                <div className="font-semibold text-foreground truncate border-b border-border pb-1.5">
-                  {documentMetadata.filename}
+                <div className="font-semibold text-foreground truncate border-b border-border pb-1.5 flex items-center justify-between">
+                  <span className="truncate">{documentMetadata.filename}</span>
+                  <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-sans uppercase">Loaded</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-muted-foreground font-mono text-[10px]">
                   <div>Words: <b className="text-foreground">{documentMetadata.word_count}</b></div>
@@ -442,74 +444,79 @@ export default function Playground() {
                 </div>
               </div>
 
-              {/* Strategy selector */}
-              <div className={`space-y-2 transition-all ${wizardStep === 1 ? "ring-2 ring-primary p-1 rounded-xl" : ""}`}>
-                <div className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                  <Settings className="h-4 w-4" />
-                  <span>2. Split Strategy</span>
-                </div>
-                
-                {/* Question Label */}
-                <div className="text-[9.5px] text-muted-foreground/60 italic pb-1">
-                  "How should the document be split?"
-                </div>
-
-                <StrategyCard
-                  selectedStrategy={strategy}
-                  onSelect={(s) => {
-                    setChunks([]);
-                    setStrategy(s);
-                  }}
-                  isLearningMode={isLearningMode}
-                />
-              </div>
-
-              {/* Parameter Configuration panel */}
-              <div className={`transition-all ${wizardStep === 2 ? "ring-2 ring-primary p-1 rounded-xl" : ""}`}>
-                <ParameterPanel
-                  strategy={strategy}
-                  params={params}
-                  onChange={setParams}
-                  isLearningMode={isLearningMode}
-                />
-              </div>
+              {/* Learning Checklist Progress vertical list (Moved to Left Sidebar Explorer) */}
+              <LearningJourney
+                currentStep={wizardStep}
+                hasDocument={!!documentMetadata}
+                onSelectStep={(step) => {
+                  setWizardStep(step);
+                  // Auto-switch tabs to match visual representations with active tutorial guide steps
+                  if (step <= 4) {
+                    setActiveTab("visualizer");
+                  } else if (step === 5) {
+                    setActiveTab("semantic");
+                    setActiveSemanticSubTab("inspector");
+                  } else if (step === 6) {
+                    setActiveTab("semantic");
+                    setActiveSemanticSubTab("neighbors");
+                  } else if (step === 7) {
+                    setActiveTab("visualizer");
+                  }
+                }}
+              />
             </>
           )}
         </section>
 
         {/* ============================================================== */}
-        {/* COLUMN 2: LIVE VISUALIZATION (Width: 2/5 - CENTER STICKY FOCUS) */}
+        {/* COLUMN 2: LIVE VISUALIZATION VIEWPORT (Width: 2/5 - CENTER FOCUS) */}
         {/* ============================================================== */}
-        <section className="lg:col-span-2 h-full overflow-y-auto px-1 flex flex-col space-y-6 scrollbar-thin pb-6">
+        <section className="lg:col-span-2 h-full overflow-y-auto px-1 flex flex-col space-y-6 scrollbar-thin pb-6 px-2">
           {/* Main workspace navigation tabs */}
-          <div className="flex justify-between items-center border-b border-border pb-2 shrink-0">
-            <div className="flex space-x-1 p-0.5 bg-secondary/40 border border-border rounded-lg">
-              {[
-                { id: "visualizer", label: "Live Visualizer", icon: Activity },
-                { id: "density", label: "Density & Overlaps", icon: Grid },
-                { id: "semantic", label: "Semantic Space", icon: Network },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1.5 transition-all ${
-                    activeTab === tab.id
-                      ? "bg-card border border-border shadow-sm text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <tab.icon className="h-3.5 w-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+          {documentMetadata && (
+            <div className="flex justify-between items-center border-b border-border pb-2 shrink-0">
+              <div className="flex space-x-1 p-0.5 bg-secondary/40 border border-border rounded-lg">
+                {[
+                  { id: "visualizer", label: "Live Visualizer", icon: Activity },
+                  { id: "density", label: "Density & Overlaps", icon: Grid },
+                  { id: "semantic", label: "Semantic Space", icon: Network },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1.5 transition-all ${
+                      activeTab === tab.id
+                        ? "bg-card border border-border shadow-sm text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <tab.icon className="h-3.5 w-3.5" />
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Guided Learning Mode Stepper Banner */}
-          {isLearningMode && (
+          {isLearningMode && documentMetadata && (
             <GuidedLearningWizard
               currentStep={wizardStep}
-              setCurrentStep={setWizardStep}
+              setCurrentStep={(step) => {
+                setWizardStep(step);
+                // Synchronize tab mappings
+                if (step <= 4) {
+                  setActiveTab("visualizer");
+                } else if (step === 5) {
+                  setActiveTab("semantic");
+                  setActiveSemanticSubTab("inspector");
+                } else if (step === 6) {
+                  setActiveTab("semantic");
+                  setActiveSemanticSubTab("neighbors");
+                } else if (step === 7) {
+                  setActiveTab("visualizer");
+                }
+              }}
               strategy={strategy}
             />
           )}
@@ -517,7 +524,7 @@ export default function Playground() {
           {/* Active Visualizer Viewport */}
           <div className="flex-1 min-h-0 relative">
             {!documentMetadata ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-border border-dashed rounded-2xl bg-card/30">
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 border border-border border-dashed rounded-2xl bg-card/30 min-h-[400px]">
                 <FileText className="h-12 w-12 text-muted-foreground/30 mb-3 animate-pulse" />
                 <h3 className="font-bold text-sm text-foreground">No Document Ingested</h3>
                 <p className="text-xs text-muted-foreground max-w-sm mt-1">
@@ -530,21 +537,89 @@ export default function Playground() {
                 {/* Active Tab render */}
                 {activeTab === "visualizer" && (
                   <div className="space-y-4">
-                    {isProcessing && (
-                      <div className="text-[11px] bg-secondary/80 border border-border rounded-lg p-2.5 text-muted-foreground flex items-center space-x-2 shrink-0 animate-pulse">
-                        <RefreshCw className="h-3.5 w-3.5 text-primary animate-spin" />
-                        <span>Updating split boundaries...</span>
+                    {/* Stage 7 Export view center card overrides in Learning Mode */}
+                    {wizardStep === 7 && isLearningMode ? (
+                      <div className="glass-panel p-6 border border-primary/20 bg-card rounded-2xl space-y-4">
+                        <div className="flex items-center space-x-2 border-b border-border/40 pb-3">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                          <h3 className="font-extrabold text-sm text-foreground uppercase tracking-wider">
+                            Stage 7: Export Processed Index
+                          </h3>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Congratulations! Your document has been parsed, chunk boundaries finetuned, semantic neighbor index computed, and coordinates projected. You are ready to export the result.
+                        </p>
+
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                            Index Dataset Preview (JSON)
+                          </span>
+                          <pre className="bg-[#0c0c0f] border border-border p-4 rounded-xl text-[9px] font-mono text-zinc-400 overflow-x-auto max-h-48 scrollbar-thin">
+                            {JSON.stringify({
+                              project: "ChunkScope",
+                              document: documentMetadata.filename,
+                              strategy: strategy,
+                              total_chunks: chunks.length,
+                              parameters: params,
+                              chunks: chunks.slice(0, 2).map((c) => ({
+                                id: c.id,
+                                text: c.text.substring(0, 60) + "...",
+                                tokens: c.token_count,
+                                range: `${c.start_char}-${c.end_char}`
+                              }))
+                            }, null, 2)}
+                          </pre>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+                              JSON.stringify({
+                                project: "ChunkScope",
+                                document: documentMetadata.filename,
+                                strategy: strategy,
+                                parameters: params,
+                                chunks: chunks.map(c => ({
+                                  id: c.id,
+                                  text: c.text,
+                                  tokens: c.token_count,
+                                  range: { start: c.start_char, end: c.end_char }
+                                }))
+                              }, null, 2)
+                            );
+                            const downloadAnchor = document.createElement('a');
+                            downloadAnchor.setAttribute("href", dataStr);
+                            downloadAnchor.setAttribute("download", `chunkscope-${strategy}-export.json`);
+                            document.body.appendChild(downloadAnchor);
+                            downloadAnchor.click();
+                            downloadAnchor.remove();
+                          }}
+                          className="w-full py-2.5 bg-primary hover:bg-primary/95 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                        >
+                          <span>Download Index JSON</span>
+                        </button>
                       </div>
+                    ) : (
+                      <>
+                        {isProcessing && (
+                          <div className="text-[11px] bg-secondary/80 border border-border rounded-lg p-2.5 text-muted-foreground flex items-center space-x-2 shrink-0 animate-pulse">
+                            <RefreshCw className="h-3.5 w-3.5 text-primary animate-spin" />
+                            <span>Updating split boundaries...</span>
+                          </div>
+                        )}
+                        
+                        <LiveVisualizer
+                          originalText={documentMetadata.text}
+                          chunks={chunks}
+                          hoveredChunkId={hoveredChunkId}
+                          setHoveredChunkId={setHoveredChunkId}
+                          selectedChunkId={selectedChunkId}
+                          setSelectedChunkId={setSelectedChunkId}
+                          isProcessing={isProcessing}
+                        />
+                      </>
                     )}
-                    
-                    <LiveVisualizer
-                      originalText={documentMetadata.text}
-                      chunks={chunks}
-                      hoveredChunkId={hoveredChunkId}
-                      setHoveredChunkId={setHoveredChunkId}
-                      selectedChunkId={selectedChunkId}
-                      setSelectedChunkId={setSelectedChunkId}
-                    />
                   </div>
                 )}
 
@@ -636,7 +711,7 @@ export default function Playground() {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-[10px] leading-normal italic">
-                  Drag parameter sliders in the left panel to analyze RAG index tradeoffs in real-time.
+                  Drag parameter sliders in the right panel to analyze RAG index tradeoffs in real-time.
                 </p>
               )}
             </div>
@@ -644,17 +719,47 @@ export default function Playground() {
         </section>
 
         {/* ============================================================== */}
-        {/* COLUMN 3: DIAGNOSTICS, INSPECTOR & ANALYTICS (Width: 2/5)       */}
+        {/* COLUMN 3: PROPERTIES, PARAMETERS & ANALYSIS (Width: 2/5 - RIGHT SIDEBAR) */}
         {/* ============================================================== */}
-        <section className="lg:col-span-2 h-full overflow-y-auto pl-1 flex flex-col space-y-6 scrollbar-thin pb-6">
-          {/* Learning Checklist Progress vertical list */}
-          <LearningJourney
-            currentStep={wizardStep}
-            hasDocument={!!documentMetadata}
-          />
-
+        <section className="lg:col-span-2 h-full overflow-y-auto pl-1 flex flex-col space-y-6 scrollbar-thin pb-6 border-l border-border/40 pl-4">
+          
           {documentMetadata && (
             <>
+              {/* Strategy Selector (Figma properties sidebar) */}
+              {(!isLearningMode || wizardStep >= 2) && (
+                <div className={`space-y-2 transition-all ${wizardStep === 2 && isLearningMode ? "ring-2 ring-primary p-1 rounded-xl animate-pulse" : ""}`}>
+                  <div className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                    <Settings className="h-4 w-4 text-primary" />
+                    <span>2. Split Strategy</span>
+                  </div>
+                  
+                  <div className="text-[9.5px] text-muted-foreground/60 italic pb-1">
+                    "How should the document be split?"
+                  </div>
+
+                  <StrategyCard
+                    selectedStrategy={strategy}
+                    onSelect={(s) => {
+                      setChunks([]);
+                      setStrategy(s);
+                    }}
+                    isLearningMode={isLearningMode}
+                  />
+                </div>
+              )}
+
+              {/* Parameter Configuration panel (Figma properties sidebar) */}
+              {(!isLearningMode || wizardStep >= 3) && (
+                <div className={`transition-all ${wizardStep === 3 && isLearningMode ? "ring-2 ring-primary p-1 rounded-xl animate-pulse" : ""}`}>
+                  <ParameterPanel
+                    strategy={strategy}
+                    params={params}
+                    onChange={setParams}
+                    isLearningMode={isLearningMode}
+                  />
+                </div>
+              )}
+
               {/* Progressive Disclosure Toggle */}
               <div className="flex justify-between items-center bg-secondary/35 border border-border p-3 rounded-xl text-xs">
                 <span className="font-semibold text-muted-foreground flex items-center">
@@ -673,18 +778,22 @@ export default function Playground() {
               </div>
 
               {/* RAG Diagnostics Analytics Board */}
-              <AnalyticsBoard
-                chunks={chunks}
-                originalTextLength={documentMetadata.text.length}
-                stats={statistics}
-                isLearningMode={!showExpertAnalysis}
-              />
+              {(!isLearningMode || wizardStep >= 4) && (
+                <AnalyticsBoard
+                  chunks={chunks}
+                  originalTextLength={documentMetadata.text.length}
+                  stats={statistics}
+                  isLearningMode={!showExpertAnalysis}
+                />
+              )}
 
               {/* Strategy Comparison Matrix */}
-              <CompareStrategies
-                isLearningMode={isLearningMode}
-                activeStrategy={strategy}
-              />
+              {(!isLearningMode || wizardStep >= 4) && (
+                <CompareStrategies
+                  isLearningMode={isLearningMode}
+                  activeStrategy={strategy}
+                />
+              )}
 
               {/* Semantic Space sub-inspector panels (only shown on semantic tab) */}
               {activeTab === "semantic" && embeddedChunks.length > 0 && (

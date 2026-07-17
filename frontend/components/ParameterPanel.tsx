@@ -149,6 +149,16 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               onChange={(e) => updateParam("chunk_size", parseInt(e.target.value))}
               className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
             />
+            
+            {/* Tick Scale & Recommended Value labels */}
+            <div className="flex justify-between text-[8px] text-muted-foreground/60 font-mono px-0.5">
+              <span>100</span>
+              <span>500</span>
+              <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 400–1000</span>
+              <span>1500</span>
+              <span>2000</span>
+            </div>
+
             {activeTooltip === "chunk_size" && renderTooltipOverlay("chunk_size")}
           </div>
 
@@ -172,6 +182,16 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               onChange={(e) => updateParam("chunk_overlap", parseInt(e.target.value))}
               className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
             />
+
+            {/* Tick Scale & Recommended Value labels */}
+            <div className="flex justify-between text-[8px] text-muted-foreground/60 font-mono px-0.5">
+              <span>0</span>
+              <span>100</span>
+              <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 50–150</span>
+              <span>300</span>
+              <span>500</span>
+            </div>
+
             {activeTooltip === "chunk_overlap" && renderTooltipOverlay("chunk_overlap")}
           </div>
 
@@ -215,6 +235,16 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               onChange={(e) => updateParam("sentences_per_chunk", parseInt(e.target.value))}
               className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
             />
+
+            {/* Tick Scale & Recommended Value labels */}
+            <div className="flex justify-between text-[8px] text-muted-foreground/60 font-mono px-0.5">
+              <span>1</span>
+              <span>4</span>
+              <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 2–5</span>
+              <span>10</span>
+              <span>15</span>
+            </div>
+
             {activeTooltip === "sentences_per_chunk" && renderTooltipOverlay("sentences_per_chunk")}
           </div>
         </div>
@@ -242,6 +272,16 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               onChange={(e) => updateParam("paragraphs_per_chunk", parseInt(e.target.value))}
               className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
             />
+
+            {/* Tick Scale & Recommended Value labels */}
+            <div className="flex justify-between text-[8px] text-muted-foreground/60 font-mono px-0.5">
+              <span>1</span>
+              <span>3</span>
+              <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 1–2</span>
+              <span>6</span>
+              <span>10</span>
+            </div>
+
             {activeTooltip === "paragraphs_per_chunk" && renderTooltipOverlay("paragraphs_per_chunk")}
           </div>
         </div>
@@ -269,6 +309,16 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               onChange={(e) => updateParam("window_size", parseInt(e.target.value))}
               className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
             />
+
+            {/* Tick Scale & Recommended Value labels */}
+            <div className="flex justify-between text-[8px] text-muted-foreground/60 font-mono px-0.5">
+              <span>10</span>
+              <span>80</span>
+              <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 80–150</span>
+              <span>200</span>
+              <span>300</span>
+            </div>
+
             {activeTooltip === "window_size" && renderTooltipOverlay("window_size")}
           </div>
 
@@ -291,6 +341,16 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               onChange={(e) => updateParam("stride", parseInt(e.target.value))}
               className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
             />
+
+            {/* Tick Scale & Recommended Value labels */}
+            <div className="flex justify-between text-[8px] text-muted-foreground/60 font-mono px-0.5">
+              <span>5</span>
+              <span>40</span>
+              <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 40–80</span>
+              <span>100</span>
+              <span>150</span>
+            </div>
+
             {activeTooltip === "stride" && renderTooltipOverlay("stride")}
           </div>
         </div>

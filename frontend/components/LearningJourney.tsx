@@ -6,6 +6,7 @@ import { CheckCircle2, Circle } from "lucide-react";
 interface LearningJourneyProps {
   currentStep: number;
   hasDocument: boolean;
+  onSelectStep?: (step: number) => void;
 }
 
 interface JourneyStage {
@@ -15,14 +16,16 @@ interface JourneyStage {
 }
 
 const STAGES: JourneyStage[] = [
-  { id: 1, label: "Upload Document", description: "Ingest target text sources" },
-  { id: 2, label: "Select Strategy", description: "Choose split algorithms" },
-  { id: 3, label: "Configure Parameters", description: "Fine-tune sizing and overlap" },
-  { id: 4, label: "Observe Chunks", description: "Inspect split boundary logic" },
-  { id: 5, label: "Analyze Results", description: "Compare efficiency ratings" },
+  { id: 1, label: "1. Upload Document", description: "Ingest target text sources" },
+  { id: 2, label: "2. Choose Strategy", description: "Select split algorithms" },
+  { id: 3, label: "3. Configure Parameters", description: "Fine-tune sizing & overlap" },
+  { id: 4, label: "4. Watch Chunking Live", description: "Observe splits & overlaps" },
+  { id: 5, label: "5. Semantic Embeddings", description: "Map meaning to 2D vector space" },
+  { id: 6, label: "6. Inspect Similarity", description: "Measure HNSW nearest neighbors" },
+  { id: 7, label: "7. Export RAG Index", description: "Download processed JSON dataset" },
 ];
 
-export default function LearningJourney({ currentStep, hasDocument }: LearningJourneyProps) {
+export default function LearningJourney({ currentStep, hasDocument, onSelectStep }: LearningJourneyProps) {
   return (
     <div className="glass-panel p-4 rounded-xl border border-border bg-card/45 space-y-3.5">
       <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -33,11 +36,19 @@ export default function LearningJourney({ currentStep, hasDocument }: LearningJo
         {STAGES.map((stage) => {
           const isDone = stage.id < currentStep || (stage.id === 1 && hasDocument);
           const isCurrent = stage.id === currentStep;
+          const isClickable = hasDocument || stage.id === 1;
 
           return (
             <div
               key={stage.id}
+              onClick={() => {
+                if (isClickable && onSelectStep) {
+                  onSelectStep(stage.id);
+                }
+              }}
               className={`flex items-start space-x-2.5 transition-all duration-200 ${
+                isClickable ? "cursor-pointer hover:translate-x-0.5" : "cursor-not-allowed"
+              } ${
                 isCurrent 
                   ? "text-primary scale-[1.02] font-semibold" 
                   : isDone

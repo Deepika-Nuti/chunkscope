@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { ZoomIn, ZoomOut, Maximize2, Search, HelpCircle, FileText, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Chunk } from "../lib/fallback-engine";
 
 interface LiveVisualizerProps {
@@ -11,6 +12,7 @@ interface LiveVisualizerProps {
   setHoveredChunkId: (id: number | null) => void;
   selectedChunkId: number | null;
   setSelectedChunkId: (id: number | null) => void;
+  isProcessing?: boolean;
 }
 
 // Map a chunk ID to a unique, consistent pastel HSL color using Golden Ratio distribution
@@ -31,6 +33,7 @@ export default function LiveVisualizer({
   setHoveredChunkId,
   selectedChunkId,
   setSelectedChunkId,
+  isProcessing,
 }: LiveVisualizerProps) {
   const [zoomLevel, setZoomLevel] = useState(14); // Font size in px
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,7 +98,7 @@ export default function LiveVisualizer({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
       {/* 1. Document Visual Highlight Container */}
-      <div className="lg:col-span-2 flex flex-col h-full glass-panel border border-border bg-card/45 rounded-xl overflow-hidden">
+      <div className="lg:col-span-2 flex flex-col h-full glass-panel border border-border bg-card/45 rounded-xl overflow-hidden relative">
         {/* Controls header */}
         <div className="flex flex-wrap items-center justify-between p-3 border-b border-border bg-secondary/30 gap-2">
           <div className="flex items-center space-x-2">
@@ -143,81 +146,89 @@ export default function LiveVisualizer({
         <div
           ref={docContainerRef}
           style={{ fontSize: `${zoomLevel}px` }}
-          className="flex-1 overflow-y-auto p-5 font-sans leading-relaxed whitespace-pre-wrap select-text selection:bg-primary/20"
+          className="flex-1 overflow-y-auto p-5 font-sans leading-relaxed whitespace-pre-wrap select-text selection:bg-primary/20 relative"
         >
+          {isProcessing && <div className="scan-line" />}
           {chunks.length === 0 ? (
             <div className="h-full flex items-center justify-center text-muted-foreground text-xs">
               Upload a document or load the sample guide to visualize chunks.
             </div>
           ) : (
-            textSlices.map((slice, index) => {
-              const isSliceHovered = hoveredChunkId !== null && slice.chunkIds.includes(hoveredChunkId);
-              const isSliceSelected = selectedChunkId !== null && slice.chunkIds.includes(selectedChunkId);
-              
-              // Calculate style
-              let style: React.CSSProperties = {};
-              let className = "relative inline rounded-[3px] py-[1px] transition-all duration-150 cursor-pointer ";
-
-              if (slice.chunkIds.length === 0) {
-                // Unchunked plain whitespace/text
-                className += "text-muted-foreground/60";
-              } else if (slice.isOverlap) {
-                // Overlap: render diagonal stripes blending chunk colors
-                className += "border-b-2 border-amber-500/40 ";
-                const c1 = getChunkColor(slice.chunkIds[0], 0.25);
-                const c2 = getChunkColor(slice.chunkIds[1], 0.3);
-                style.background = `repeating-linear-gradient(45deg, ${c1} 0px, ${c1} 6px, ${c2} 6px, ${c2} 12px)`;
-                if (isSliceHovered || isSliceSelected) {
-                  className += "ring-1 ring-amber-400 font-medium ";
-                  style.background = `repeating-linear-gradient(45deg, ${getChunkColor(slice.chunkIds[0], 0.4)} 0px, ${getChunkColor(slice.chunkIds[0], 0.4)} 6px, ${getChunkColor(slice.chunkIds[1], 0.55)} 6px, ${getChunkColor(slice.chunkIds[1], 0.55)} 12px)`;
-                }
-              } else {
-                // Standard single chunk region
-                const chunkId = slice.chunkIds[0];
-                style.backgroundColor = getChunkColor(chunkId, 0.14);
-                style.borderBottom = `2px solid ${getChunkBorderColor(chunkId)}`;
+            <AnimatePresence mode="popLayout">
+              {textSlices.map((slice, index) => {
+                const isSliceHovered = hoveredChunkId !== null && slice.chunkIds.includes(hoveredChunkId);
+                const isSliceSelected = selectedChunkId !== null && slice.chunkIds.includes(selectedChunkId);
                 
-                if (isSliceHovered || isSliceSelected) {
-                  className += "font-medium ring-1 ";
-                  style.backgroundColor = getChunkColor(chunkId, 0.32);
-                  style.borderColor = getChunkBorderColor(chunkId);
+                // Calculate style
+                let style: React.CSSProperties = {};
+                let className = "relative inline rounded-[3px] py-[1px] transition-all duration-150 cursor-pointer ";
+
+                if (slice.chunkIds.length === 0) {
+                  // Unchunked plain whitespace/text
+                  className += "text-muted-foreground/60";
+                } else if (slice.isOverlap) {
+                  // Overlap: render diagonal stripes blending chunk colors
+                  className += "border-b-2 border-amber-500/40 ";
+                  const c1 = getChunkColor(slice.chunkIds[0], 0.25);
+                  const c2 = getChunkColor(slice.chunkIds[1], 0.3);
+                  style.background = `repeating-linear-gradient(45deg, ${c1} 0px, ${c1} 6px, ${c2} 6px, ${c2} 12px)`;
+                  if (isSliceHovered || isSliceSelected) {
+                    className += "ring-1 ring-amber-400 font-medium ";
+                    style.background = `repeating-linear-gradient(45deg, ${getChunkColor(slice.chunkIds[0], 0.4)} 0px, ${getChunkColor(slice.chunkIds[0], 0.4)} 6px, ${getChunkColor(slice.chunkIds[1], 0.55)} 6px, ${getChunkColor(slice.chunkIds[1], 0.55)} 12px)`;
+                  }
+                } else {
+                  // Standard single chunk region
+                  const chunkId = slice.chunkIds[0];
+                  style.backgroundColor = getChunkColor(chunkId, 0.14);
+                  style.borderBottom = `2px solid ${getChunkBorderColor(chunkId)}`;
+                  
+                  if (isSliceHovered || isSliceSelected) {
+                    className += "font-medium ring-1 ";
+                    style.backgroundColor = getChunkColor(chunkId, 0.32);
+                    style.borderColor = getChunkBorderColor(chunkId);
+                  }
                 }
-              }
 
-              // Apply search highlights on top of slices
-              const containsSearch = searchTerm && slice.text.toLowerCase().includes(searchTerm.toLowerCase());
-              if (containsSearch) {
-                className += " ring-2 ring-primary bg-primary/20 ";
-              }
+                // Apply search highlights on top of slices
+                const containsSearch = searchTerm && slice.text.toLowerCase().includes(searchTerm.toLowerCase());
+                if (containsSearch) {
+                  className += " ring-2 ring-primary bg-primary/20 ";
+                }
 
-              return (
-                <span
-                  key={index}
-                  className={className}
-                  style={style}
-                  onMouseEnter={() => {
-                    if (slice.chunkIds.length > 0) {
-                      // Hover the first chunk of this slice
-                      setHoveredChunkId(slice.chunkIds[0]);
-                    }
-                  }}
-                  onMouseLeave={() => setHoveredChunkId(null)}
-                  onClick={() => {
-                    if (slice.chunkIds.length > 0) {
-                      setSelectedChunkId(slice.chunkIds[0]);
-                    }
-                  }}
-                >
-                  {slice.text}
-                </span>
-              );
-            })
+                return (
+                  <motion.span
+                    key={`slice-${index}`}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className={className}
+                    style={style}
+                    onMouseEnter={() => {
+                      if (slice.chunkIds.length > 0) {
+                        // Hover the first chunk of this slice
+                        setHoveredChunkId(slice.chunkIds[0]);
+                      }
+                    }}
+                    onMouseLeave={() => setHoveredChunkId(null)}
+                    onClick={() => {
+                      if (slice.chunkIds.length > 0) {
+                        setSelectedChunkId(slice.chunkIds[0]);
+                      }
+                    }}
+                  >
+                    {slice.text}
+                  </motion.span>
+                );
+              })}
+            </AnimatePresence>
           )}
         </div>
 
         {/* Live Hover Info Floating Bar */}
         {activeChunk && (
-          <div className="p-3 bg-secondary/60 border-t border-border flex flex-wrap items-center justify-between text-xs px-5 gap-3 animate-fade-in">
+          <div className="p-3 bg-secondary/60 border-t border-border flex flex-wrap items-center justify-between text-xs px-5 gap-3 animate-fade-in relative z-20">
             <div className="flex items-center space-x-3">
               <span className="font-semibold text-primary font-mono">
                 Chunk #{activeChunk.id}
@@ -287,72 +298,79 @@ function CardList({
           Your generated chunks will appear here as catalogued cards.
         </div>
       ) : (
-        chunks.map((chunk) => {
-          const isHovered = hoveredChunkId === chunk.id;
-          const isSelected = selectedChunkId === chunk.id;
-          const isExpanded = !!expandedIds[chunk.id];
+        <AnimatePresence mode="popLayout">
+          {chunks.map((chunk) => {
+            const isHovered = hoveredChunkId === chunk.id;
+            const isSelected = selectedChunkId === chunk.id;
+            const isExpanded = !!expandedIds[chunk.id];
 
-          const borderStyle = {
-            borderColor: isHovered || isSelected ? getChunkBorderColor(chunk.id) : "transparent",
-          };
+            const borderStyle = {
+              borderColor: isHovered || isSelected ? getChunkBorderColor(chunk.id) : "transparent",
+            };
 
-          return (
-            <div
-              key={chunk.id}
-              ref={(el) => {
-                chunkRefs.current[chunk.id] = el;
-              }}
-              style={borderStyle}
-              className={`p-3 rounded-lg border transition-all text-xs relative ${
-                isHovered || isSelected
-                  ? "bg-secondary/90 shadow-md ring-1 ring-primary/20 scale-[1.01]"
-                  : "bg-secondary/40 hover:bg-secondary/60 border-border"
-              }`}
-              onMouseEnter={() => setHoveredChunkId(chunk.id)}
-              onMouseLeave={() => setHoveredChunkId(null)}
-              onClick={() => setSelectedChunkId(chunk.id)}
-            >
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="font-bold text-primary font-mono text-[11px]">Chunk #{chunk.id}</span>
-                <div className="flex space-x-1 text-[8.5px] font-mono text-muted-foreground">
-                  <span>Tokens: ~{chunk.token_count}</span>
-                  <span>|</span>
-                  <span>Chars: {chunk.start_char}-{chunk.end_char}</span>
+            return (
+              <motion.div
+                key={chunk.id}
+                ref={(el) => {
+                  chunkRefs.current[chunk.id] = el;
+                }}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                style={borderStyle}
+                className={`p-3 rounded-lg border transition-all text-xs relative cursor-pointer ${
+                  isHovered || isSelected
+                    ? "bg-secondary/90 shadow-md ring-1 ring-primary/20 scale-[1.01]"
+                    : "bg-secondary/40 hover:bg-secondary/60 border-border"
+                }`}
+                onMouseEnter={() => setHoveredChunkId(chunk.id)}
+                onMouseLeave={() => setHoveredChunkId(null)}
+                onClick={() => setSelectedChunkId(chunk.id)}
+              >
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="font-bold text-primary font-mono text-[11px]">Chunk #{chunk.id}</span>
+                  <div className="flex space-x-1 text-[8.5px] font-mono text-muted-foreground">
+                    <span>Tokens: ~{chunk.token_count}</span>
+                    <span>|</span>
+                    <span>Chars: {chunk.start_char}-{chunk.end_char}</span>
+                  </div>
                 </div>
-              </div>
 
-              <p className="line-clamp-2 text-muted-foreground font-mono text-[9.5px] whitespace-pre-wrap leading-relaxed mb-2">
-                {chunk.text}
-              </p>
+                <p className="line-clamp-2 text-muted-foreground font-mono text-[9.5px] whitespace-pre-wrap leading-relaxed mb-2">
+                  {chunk.text}
+                </p>
 
-              {/* Show Details toggle */}
-              <div className="flex justify-between items-center pt-1.5 border-t border-border/40 text-[9px]">
-                <button
-                  onClick={(e) => toggleExpand(chunk.id, e)}
-                  className="text-primary hover:underline font-semibold cursor-pointer"
-                >
-                  {isExpanded ? "Hide Details" : "Show Details"}
-                </button>
+                {/* Show Details toggle */}
+                <div className="flex justify-between items-center pt-1.5 border-t border-border/40 text-[9px]">
+                  <button
+                    onClick={(e) => toggleExpand(chunk.id, e)}
+                    className="text-primary hover:underline font-semibold cursor-pointer"
+                  >
+                    {isExpanded ? "Hide Details" : "Show Details"}
+                  </button>
 
+                  {isExpanded && (
+                    <span className="text-muted-foreground text-[8px]">
+                      Len: {chunk.char_count} chars
+                    </span>
+                  )}
+                </div>
+
+                {/* Expanded details container */}
                 {isExpanded && (
-                  <span className="text-muted-foreground text-[8px]">
-                    Len: {chunk.char_count} chars
-                  </span>
+                  <div className="mt-2 pt-2 border-t border-dashed border-border/60 grid grid-cols-2 gap-2 text-[8.5px] font-mono text-muted-foreground">
+                    <div>Prev Overlap: <b className="text-amber-500">{chunk.overlap_prev}c</b></div>
+                    <div>Next Overlap: <b className="text-amber-500">{chunk.overlap_next}c</b></div>
+                    <div>Coherence Score: <span className="text-emerald-400 font-bold">High (95%)</span></div>
+                    <div>Retrieval Estimate: <span className="text-indigo-400 font-bold">Good (90%)</span></div>
+                  </div>
                 )}
-              </div>
-
-              {/* Expanded details container */}
-              {isExpanded && (
-                <div className="mt-2 pt-2 border-t border-dashed border-border/60 grid grid-cols-2 gap-2 text-[8.5px] font-mono text-muted-foreground">
-                  <div>Prev Overlap: <b className="text-amber-500">{chunk.overlap_prev}c</b></div>
-                  <div>Next Overlap: <b className="text-amber-500">{chunk.overlap_next}c</b></div>
-                  <div>Coherence Score: <span className="text-emerald-400 font-bold">High (95%)</span></div>
-                  <div>Retrieval Estimate: <span className="text-indigo-400 font-bold">Good (90%)</span></div>
-                </div>
-              )}
-            </div>
-          );
-        })
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       )}
     </div>
   );

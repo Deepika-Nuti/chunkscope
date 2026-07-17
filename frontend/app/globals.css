@@ -126,3 +126,27 @@ body {
   box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
 }
 
+/* Glowing text scanner bar */
+@keyframes scan-down {
+  0% {
+    top: -5%;
+  }
+  50% {
+    top: 105%;
+  }
+  100% {
+    top: -5%;
+  }
+}
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, transparent, var(--primary), transparent);
+  box-shadow: 0 0 16px var(--primary), 0 0 8px var(--primary);
+  animation: scan-down 3.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+

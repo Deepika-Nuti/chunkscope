@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { EmbeddedChunk, SemanticEdge } from "../lib/semantic-fallback";
 import { getChunkColor, getChunkBorderColor } from "./LiveVisualizer";
 import { ZoomIn, ZoomOut, Move, Eye, Network, HelpCircle } from "lucide-react";
@@ -64,6 +65,8 @@ export default function EmbeddingViewer({
         cluster: c.cluster || 0,
         topic: c.semanticTopic || "Unclassified",
         text: c.text,
+        tokenCount: c.tokenCount,
+        strategy: c.strategy,
       };
     });
   }, [chunks]);
@@ -76,6 +79,18 @@ export default function EmbeddingViewer({
     });
     return map;
   }, [coordinatesMap]);
+
+  // Compute active neighborhood (hovered or selected chunk + its direct neighbors in the index)
+  const activeNeighbors = useMemo(() => {
+    const activeId = hoveredChunkId !== null ? String(hoveredChunkId) : (selectedChunkId !== null ? String(selectedChunkId) : null);
+    if (!activeId) return new Set<string>();
+    const neighbors = new Set<string>([activeId]);
+    edges.forEach((edge) => {
+      if (edge.source === activeId) neighbors.add(edge.target);
+      if (edge.target === activeId) neighbors.add(edge.source);
+    });
+    return neighbors;
+  }, [edges, hoveredChunkId, selectedChunkId]);
 
   // Handle Drag / Panning mouse events
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -96,7 +111,6 @@ export default function EmbeddingViewer({
     setIsDragging(false);
   };
 
-  // Handle zooming via scrollwheel
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const zoomFactor = 0.08;
@@ -110,11 +124,11 @@ export default function EmbeddingViewer({
   };
 
   return (
-    <div className="glass-panel p-5 rounded-xl border border-border bg-card/45 flex flex-col space-y-4">
+    <div className="glass-panel p-5 rounded-xl border border-border bg-card/45 flex flex-col space-y-4 relative">
       {/* Header controls */}
       <div className="flex flex-wrap justify-between items-center pb-2 border-b border-border gap-3">
         <div className="flex items-center space-x-2 shrink-0">
-          <Network className="h-4 w-4 text-violet-400" />
+          <Network className="h-4 w-4 text-violet-400 animate-pulse" />
           <span className="text-xs font-semibold">2D Semantic Embedding Space</span>
         </div>
 
@@ -163,7 +177,7 @@ export default function EmbeddingViewer({
         <p className="text-[10px] text-muted-foreground leading-normal flex items-start space-x-1.5 bg-secondary/35 p-2 rounded-lg border border-border/40">
           <HelpCircle className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
           <span>
-            Each point represents a text chunk. Chunks sharing topics are colored similarly and cluster together. The lines represent the <b>nearest neighbor relationships</b>, which vector databases navigate during similarity queries (HNSW indexes).
+            Each point represents a text chunk. Similar meanings colored identically cluster together. Hover/select any chunk node to dim distant vectors and highlight nearest-neighbor query paths.
           </span>
         </p>
       )}
@@ -180,6 +194,30 @@ export default function EmbeddingViewer({
       >
         {/* Graph background grids */}
         <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+
+        {/* Floating Tooltip details card */}
+        {hoveredChunkId !== null && (
+          <div className="absolute top-3 right-3 bg-card/95 border border-border/80 p-3 rounded-lg shadow-lg text-[9.5px] font-sans text-zinc-300 w-52 space-y-1.5 backdrop-blur z-20 pointer-events-none border-l-2 border-l-primary animate-fade-in">
+            <div className="font-extrabold text-[10px] text-primary border-b border-border/40 pb-1 flex justify-between items-center">
+              <span>Vector Node #{hoveredChunkId}</span>
+              <span className="text-[8px] bg-secondary text-zinc-400 px-1 py-0.2 rounded font-mono uppercase">HNSW Connected</span>
+            </div>
+            {(() => {
+              const activePt = coordinatesMap.find(pt => parseInt(pt.id) === hoveredChunkId);
+              if (!activePt) return null;
+              return (
+                <div className="space-y-1">
+                  <div>Topic: <b className="text-foreground">{activePt.topic}</b></div>
+                  <div>Tokens: <b className="text-foreground">{activePt.tokenCount}</b></div>
+                  <div>Split: <b className="text-primary capitalize">{activePt.strategy}</b></div>
+                  <div className="text-[8.5px] text-muted-foreground line-clamp-2 italic pt-1 border-t border-border/40 leading-normal">
+                    "{activePt.text}"
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Viewport Scale Indicator */}
         <div className="absolute bottom-3 left-3 text-[8px] font-mono text-muted-foreground/50 flex items-center space-x-2">
@@ -204,18 +242,21 @@ export default function EmbeddingViewer({
                 const t = coordsById[edge.target];
                 if (!s || !t) return null;
                 
-                const isEdgeHighlighted = hoveredChunkId !== null && (edge.source === String(hoveredChunkId) || edge.target === String(hoveredChunkId));
+                const isEdgeHighlighted = (hoveredChunkId !== null && (edge.source === String(hoveredChunkId) || edge.target === String(hoveredChunkId))) ||
+                                          (selectedChunkId !== null && (edge.source === String(selectedChunkId) || edge.target === String(selectedChunkId)));
                 
+                // Dim edges not associated with the active neighborhood
+                const activeIdExists = hoveredChunkId !== null || selectedChunkId !== null;
+                const edgeOpacity = isEdgeHighlighted ? 0.75 : (activeIdExists ? 0.015 : 0.04);
+
                 return (
-                  <line
+                  <motion.line
                     key={`edge-${idx}`}
-                    x1={s.cx}
-                    y1={s.cy}
-                    x2={t.cx}
-                    y2={t.cy}
-                    stroke={isEdgeHighlighted ? "rgba(99, 102, 241, 0.45)" : "rgba(255,255,255,0.04)"}
-                    strokeWidth={isEdgeHighlighted ? 1.5 : 0.8}
-                    className="transition-all duration-150"
+                    animate={{ x1: s.cx, y1: s.cy, x2: t.cx, y2: t.cy }}
+                    transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                    stroke={isEdgeHighlighted ? "rgba(99, 102, 241, 0.7)" : "rgba(255,255,255,0.06)"}
+                    strokeWidth={isEdgeHighlighted ? 1.6 : 0.8}
+                    opacity={edgeOpacity}
                   />
                 );
               })}
@@ -229,11 +270,18 @@ export default function EmbeddingViewer({
               const fillColor = getChunkColor(pt.cluster, isSelected || isHovered ? 0.9 : 0.65);
               const strokeColor = getChunkBorderColor(pt.cluster);
 
+              // Dim points outside active neighborhood
+              const activeIdExists = hoveredChunkId !== null || selectedChunkId !== null;
+              const isPartofNeighborhood = activeNeighbors.size === 0 || activeNeighbors.has(pt.id);
+              const pointOpacity = isPartofNeighborhood ? 1.0 : 0.15;
+
               return (
-                <g key={pt.id}>
+                <g key={pt.id} opacity={pointOpacity} className="transition-opacity duration-200">
                   {/* Outer glow ring for selection */}
                   {(isSelected || isHovered) && (
-                    <circle
+                    <motion.circle
+                      animate={{ cx: pt.cx, cy: pt.cy }}
+                      transition={{ type: "spring", stiffness: 100, damping: 15 }}
                       cx={pt.cx}
                       cy={pt.cy}
                       r={radius + 3}
@@ -245,14 +293,16 @@ export default function EmbeddingViewer({
                   )}
 
                   {/* Core point */}
-                  <circle
+                  <motion.circle
+                    animate={{ cx: pt.cx, cy: pt.cy, r: radius }}
+                    transition={{ type: "spring", stiffness: 100, damping: 15 }}
                     cx={pt.cx}
                     cy={pt.cy}
                     r={radius}
                     fill={fillColor}
                     stroke={strokeColor}
                     strokeWidth={isSelected || isHovered ? 1.5 : 1}
-                    className="transition-all duration-150 cursor-pointer"
+                    className="cursor-pointer"
                     onMouseEnter={() => setHoveredChunkId(parseInt(pt.id))}
                     onMouseLeave={() => setHoveredChunkId(null)}
                     onClick={(e) => {
@@ -263,7 +313,9 @@ export default function EmbeddingViewer({
 
                   {/* ID labels if zoomed in significantly */}
                   {zoom > 1.8 && (
-                    <text
+                    <motion.text
+                      animate={{ x: pt.cx + 7, y: pt.cy + 3 }}
+                      transition={{ type: "spring", stiffness: 100, damping: 15 }}
                       x={pt.cx + 7}
                       y={pt.cy + 3}
                       fill="rgba(255,255,255,0.5)"
@@ -272,7 +324,7 @@ export default function EmbeddingViewer({
                       pointerEvents="none"
                     >
                       #{pt.id}
-                    </text>
+                    </motion.text>
                   )}
                 </g>
               );
