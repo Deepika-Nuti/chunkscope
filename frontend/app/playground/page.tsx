@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Eye,
   Settings2,
-  CheckCircle2
+  CheckCircle2,
+  Search
 } from "lucide-react";
 
 import DocumentUpload from "../../components/DocumentUpload";
@@ -52,6 +53,8 @@ import LandingSplash from "../../components/LandingSplash";
 import LearningJourney from "../../components/LearningJourney";
 import GuidedLearningWizard from "../../components/GuidedLearningWizard";
 import CompareStrategies from "../../components/CompareStrategies";
+import RetrievalSimulator from "../../components/RetrievalSimulator";
+import BenchmarkCompare from "../../components/BenchmarkCompare";
 
 import { FileMetadata, chunkText, checkBackendHealth, generateSemanticWorkspace } from "../../lib/api";
 import { Chunk, ChunkParams, simulateChunking } from "../../lib/fallback-engine";
@@ -65,7 +68,7 @@ export default function Playground() {
   const [showExpertAnalysis, setShowExpertAnalysis] = useState(false);
 
   const [isBackendOnline, setIsBackendOnline] = useState(false);
-  const [activeTab, setActiveTab] = useState<"visualizer" | "density" | "semantic" | "analytics" | "comparison">("visualizer");
+  const [activeTab, setActiveTab] = useState<"visualizer" | "density" | "semantic" | "retrieval" | "benchmark">("visualizer");
   
   // Document State
   const [documentMetadata, setDocumentMetadata] = useState<FileMetadata | null>(null);
@@ -256,7 +259,7 @@ export default function Playground() {
 
   // Recalculate comparison stats of all strategies on the text for comparison tab
   useEffect(() => {
-    if (!documentMetadata || activeTab !== "comparison") return;
+    if (!documentMetadata || activeTab !== "benchmark") return;
 
     const computeAllComparisons = () => {
       setIsCalculatingComparison(true);
@@ -455,10 +458,8 @@ export default function Playground() {
                     setActiveTab("visualizer");
                   } else if (step === 5) {
                     setActiveTab("semantic");
-                    setActiveSemanticSubTab("inspector");
                   } else if (step === 6) {
-                    setActiveTab("semantic");
-                    setActiveSemanticSubTab("neighbors");
+                    setActiveTab("retrieval");
                   } else if (step === 7) {
                     setActiveTab("visualizer");
                   }
@@ -480,6 +481,8 @@ export default function Playground() {
                   { id: "visualizer", label: "Live Visualizer", icon: Activity },
                   { id: "density", label: "Density & Overlaps", icon: Grid },
                   { id: "semantic", label: "Semantic Space", icon: Network },
+                  { id: "retrieval", label: "Retrieval Simulator", icon: Search },
+                  { id: "benchmark", label: "Benchmark Compare", icon: BarChart2 },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -509,10 +512,8 @@ export default function Playground() {
                   setActiveTab("visualizer");
                 } else if (step === 5) {
                   setActiveTab("semantic");
-                  setActiveSemanticSubTab("inspector");
                 } else if (step === 6) {
-                  setActiveTab("semantic");
-                  setActiveSemanticSubTab("neighbors");
+                  setActiveTab("retrieval");
                 } else if (step === 7) {
                   setActiveTab("visualizer");
                 }
@@ -675,6 +676,24 @@ export default function Playground() {
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* RETRIEVAL TAB */}
+                {activeTab === "retrieval" && (
+                  <RetrievalSimulator
+                    chunks={embeddedChunks}
+                    embeddingModel={embeddingModel}
+                    isLearningMode={isLearningMode}
+                    onHighlightChunk={(id) => setSelectedChunkId(id)}
+                  />
+                )}
+
+                {/* BENCHMARK TAB */}
+                {activeTab === "benchmark" && (
+                  <BenchmarkCompare
+                    originalText={documentMetadata.text}
+                    isLearningMode={isLearningMode}
+                  />
                 )}
               </div>
             )}

@@ -194,10 +194,14 @@ export default function VisualOverlapExplorer({
             return (
               <div
                 key={bin.index}
-                className={`flex-1 h-8 rounded-sm transition-all duration-100 hover:ring-1 hover:ring-white/40 cursor-crosshair ${colorClass}`}
+                className={`flex-1 h-8 rounded-sm transition-all duration-100 hover:ring-1 hover:ring-white/40 cursor-crosshair relative overflow-hidden ${colorClass}`}
                 onMouseEnter={() => setHoveredBin(bin)}
                 onMouseLeave={() => setHoveredBin(null)}
-              />
+              >
+                {bin.count >= 2 && (
+                  <div className="absolute inset-0 shimmer-overlay pointer-events-none" />
+                )}
+              </div>
             );
           })}
         </div>

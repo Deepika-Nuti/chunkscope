@@ -159,6 +159,28 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               <span>2000</span>
             </div>
 
+            {/* Dynamic trade-off tags */}
+            <div className="flex flex-wrap gap-1 mt-1 text-[8px] font-mono select-none">
+              {(params.chunk_size ?? 500) > 900 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Macro Context ↑</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Precision ↓</span>
+                  <span className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">Cost & Latency ↑</span>
+                </>
+              ) : (params.chunk_size ?? 500) < 400 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Precision ↑</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Fact Split risk ↑</span>
+                  <span className="text-zinc-400 bg-zinc-500/10 border border-zinc-500/20 px-1.5 py-0.5 rounded">Low Latency</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">Balanced Precision</span>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Stable Coherence</span>
+                </>
+              )}
+            </div>
+
             {activeTooltip === "chunk_size" && renderTooltipOverlay("chunk_size")}
           </div>
 
@@ -190,6 +212,25 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 50–150</span>
               <span>300</span>
               <span>500</span>
+            </div>
+
+            {/* Dynamic trade-off tags */}
+            <div className="flex flex-wrap gap-1 mt-1 text-[8px] font-mono select-none">
+              {(params.chunk_overlap ?? 100) > 150 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Semantic continuity ↑</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Storage Overlap ↑</span>
+                </>
+              ) : (params.chunk_overlap ?? 100) < 30 ? (
+                <>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Context cuts risk ↑</span>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Storage Saved</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">Safe Transition buffer</span>
+                </>
+              )}
             </div>
 
             {activeTooltip === "chunk_overlap" && renderTooltipOverlay("chunk_overlap")}
@@ -245,6 +286,21 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               <span>15</span>
             </div>
 
+            {/* Dynamic trade-off tags */}
+            <div className="flex flex-wrap gap-1 mt-1 text-[8px] font-mono select-none">
+              {(params.sentences_per_chunk ?? 3) > 6 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Thematic Context ↑</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Precise Retrieval ↓</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">Isolates exact facts</span>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Preserves boundaries</span>
+                </>
+              )}
+            </div>
+
             {activeTooltip === "sentences_per_chunk" && renderTooltipOverlay("sentences_per_chunk")}
           </div>
         </div>
@@ -280,6 +336,21 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 1–2</span>
               <span>6</span>
               <span>10</span>
+            </div>
+
+            {/* Dynamic trade-off tags */}
+            <div className="flex flex-wrap gap-1 mt-1 text-[8px] font-mono select-none">
+              {(params.paragraphs_per_chunk ?? 1) > 2 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Macro Section Summaries ↑</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Vector precision diluted</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">Section bounds preserved</span>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">High cohesion</span>
+                </>
+              )}
             </div>
 
             {activeTooltip === "paragraphs_per_chunk" && renderTooltipOverlay("paragraphs_per_chunk")}
@@ -319,6 +390,20 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               <span>300</span>
             </div>
 
+            {/* Dynamic trade-off tags */}
+            <div className="flex flex-wrap gap-1 mt-1 text-[8px] font-mono select-none">
+              {(params.window_size ?? 100) > 150 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Context size ↑</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Noise inclusion ↑</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">Exact word-span splits</span>
+                </>
+              )}
+            </div>
+
             {activeTooltip === "window_size" && renderTooltipOverlay("window_size")}
           </div>
 
@@ -349,6 +434,20 @@ export default function ParameterPanel({ strategy, params, onChange, isLearningM
               <span className="text-primary font-semibold bg-primary/5 border border-primary/20 px-1 py-0.2 rounded">Rec: 40–80</span>
               <span>100</span>
               <span>150</span>
+            </div>
+
+            {/* Dynamic trade-off tags */}
+            <div className="flex flex-wrap gap-1 mt-1 text-[8px] font-mono select-none">
+              {(params.stride ?? 50) > 80 ? (
+                <>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Fast shifts</span>
+                  <span className="text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Less boundary redundancy</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">High overlap coverage</span>
+                </>
+              )}
             </div>
 
             {activeTooltip === "stride" && renderTooltipOverlay("stride")}

@@ -150,3 +150,18 @@ body {
   z-index: 10;
 }
 
+/* Context overlap flow animation */
+@keyframes shimmer-flow {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer-overlay {
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.3), transparent);
+  background-size: 200% 100%;
+  animation: shimmer-flow 2.2s infinite linear;
+}
+

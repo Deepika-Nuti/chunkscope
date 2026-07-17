@@ -140,7 +140,7 @@ export default function SemanticHeatmap({ chunks, isLearningMode }: SemanticHeat
             {visibleChunks.map((rowChunk, r) => (
               <tr key={rowChunk.id} className="border-b border-border/60">
                 <td className="p-2 border-r border-border font-bold bg-secondary/20 text-primary font-mono text-[9px] min-w-12">
-                  #{rowChunk.id}
+                   #{rowChunk.id}
                 </td>
                 {visibleChunks.map((colChunk, c) => {
                   const score = matrixData[r][c];
@@ -148,15 +148,27 @@ export default function SemanticHeatmap({ chunks, isLearningMode }: SemanticHeat
                   const isIdentity = rowChunk.id === colChunk.id;
 
                   // Saturation mapping for HSL similarity color
-                  // Map score from [threshold, 100] to opacity [0.1, 0.8]
-                  const opacity = isFiltered ? 0.04 : 0.15 + ((score - threshold) / (100 - threshold)) * 0.65;
+                  // Map score from [threshold, 100] to opacity [0.15, 0.85]
+                  const opacity = isFiltered ? 0.04 : 0.2 + ((score - threshold) / (100 - threshold)) * 0.65;
                   
                   let style: React.CSSProperties = {};
                   if (!isFiltered) {
-                    style.backgroundColor = isIdentity 
-                      ? "rgba(99, 102, 241, 0.45)" 
-                      : `hsla(263, 85%, 65%, ${opacity})`;
-                    style.color = score > 85 ? "#ffffff" : "var(--foreground)";
+                    if (isIdentity) {
+                      style.backgroundColor = "rgba(99, 102, 241, 0.55)";
+                      style.color = "#ffffff";
+                    } else if (score >= 85) {
+                      // High similarity (Deep violet)
+                      style.backgroundColor = `hsla(263, 85%, 55%, ${opacity})`;
+                      style.color = "#ffffff";
+                    } else if (score >= 65) {
+                      // Medium similarity (Medium purple)
+                      style.backgroundColor = `hsla(280, 75%, 60%, ${opacity})`;
+                      style.color = "var(--foreground)";
+                    } else {
+                      // Low similarity (Lavender)
+                      style.backgroundColor = `hsla(290, 45%, 70%, ${opacity})`;
+                      style.color = "rgba(255,255,255,0.7)";
+                    }
                   } else {
                     style.color = "rgba(255,255,255,0.06)";
                   }
@@ -169,8 +181,8 @@ export default function SemanticHeatmap({ chunks, isLearningMode }: SemanticHeat
                       style={style}
                       onMouseEnter={() => setHoveredCell({ row: r, col: c, score })}
                       onMouseLeave={() => setHoveredCell(null)}
-                      className={`p-2 border-r border-border/60 transition-all font-bold ${
-                        isCellHovered ? "ring-1 ring-white/50 scale-105" : ""
+                      className={`p-2 border-r border-border/60 transition-all font-bold cursor-crosshair ${
+                        isCellHovered ? "ring-1 ring-white/60 scale-105" : ""
                       }`}
                     >
                       {isFiltered ? "-" : `${score}%`}
@@ -183,9 +195,30 @@ export default function SemanticHeatmap({ chunks, isLearningMode }: SemanticHeat
         </table>
       </div>
 
+      {/* Grid Color Range Legend */}
+      <div className="flex flex-wrap items-center justify-start gap-4 text-[9px] font-mono text-muted-foreground pt-1 border-t border-border/40 select-none">
+        <span className="font-bold uppercase tracking-wider">Similarity Legend:</span>
+        <span className="flex items-center space-x-1.5">
+          <span className="h-3 w-3 rounded bg-indigo-500/80 border border-indigo-400/30"></span>
+          <span>Self Identity (100%)</span>
+        </span>
+        <span className="flex items-center space-x-1.5">
+          <span className="h-3 w-3 rounded bg-purple-600/80 border border-purple-500/30"></span>
+          <span>High Proximity (≥85%)</span>
+        </span>
+        <span className="flex items-center space-x-1.5">
+          <span className="h-3 w-3 rounded bg-fuchsia-500/40 border border-fuchsia-400/30"></span>
+          <span>Medium Proximity (65% - 84%)</span>
+        </span>
+        <span className="flex items-center space-x-1.5">
+          <span className="h-3 w-3 rounded bg-pink-500/20 border border-pink-400/30"></span>
+          <span>Low Proximity (&lt;65%)</span>
+        </span>
+      </div>
+
       {/* Hover tooltip metadata details */}
       {hoveredCell && (
-        <div className="p-3 bg-secondary/40 border border-border/80 rounded-xl text-[10.5px] font-sans leading-normal animate-fade-in">
+        <div className="p-3 bg-secondary/40 border border-border/80 rounded-xl text-[10.5px] font-sans leading-normal animate-fade-in relative z-10">
           <div className="flex justify-between border-b border-border/50 pb-1 mb-1.5 font-mono text-[9px] font-bold text-muted-foreground">
             <span>PAIR CORRELATION</span>
             <span>Chunk #{visibleChunks[hoveredCell.row].id} ↔ Chunk #{visibleChunks[hoveredCell.col].id}</span>
@@ -201,7 +234,7 @@ export default function SemanticHeatmap({ chunks, isLearningMode }: SemanticHeat
             </div>
             <div className="pt-1.5 flex justify-between font-mono text-[10px] font-bold">
               <span>Cosine Proximity Score:</span>
-              <span className="text-primary">{hoveredCell.score}%</span>
+              <span className={`text-sm ${hoveredCell.score >= 85 ? "text-purple-400" : hoveredCell.score >= 65 ? "text-fuchsia-400" : "text-pink-400"}`}>{hoveredCell.score}%</span>
             </div>
           </div>
         </div>
