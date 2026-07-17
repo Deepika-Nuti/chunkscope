@@ -2,8 +2,9 @@
 
 import React, { useState, useRef } from "react";
 import { Upload, FileText, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
-import { FileMetadata, uploadDocument } from "../lib/api";
+import { FileMetadata, uploadDocument, checkBackendHealth } from "../lib/api";
 import { DEMO_DATASETS } from "../lib/demo-datasets";
+import ErrorState from "./ErrorState";
 
 interface DocumentUploadProps {
   onUploadSuccess: (metadata: FileMetadata) => void;
@@ -188,10 +189,21 @@ export default function DocumentUpload({ onUploadSuccess, isBackendOnline }: Doc
       </div>
 
       {error && (
-        <div className="flex items-start space-x-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-xs">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
+        <ErrorState
+          type={error.toLowerCase().includes("offline") || error.toLowerCase().includes("fastapi") ? "offline" : "upload"}
+          message={error}
+          onRetry={() => {
+            setError(null);
+            checkBackendHealth().then((online) => {
+              if (online) {
+                window.location.reload();
+              } else {
+                setError("FastAPI server still offline. Please check that python run.py is active.");
+              }
+            });
+          }}
+          onContinueOffline={error.toLowerCase().includes("offline") ? () => setError(null) : undefined}
+        />
       )}
 
       {fileInfo && !error && (

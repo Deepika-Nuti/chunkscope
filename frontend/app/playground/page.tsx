@@ -21,7 +21,9 @@ import {
   Eye,
   Settings2,
   CheckCircle2,
-  Search
+  Search,
+  Sliders,
+  Check
 } from "lucide-react";
 
 import DocumentUpload from "../../components/DocumentUpload";
@@ -55,6 +57,11 @@ import GuidedLearningWizard from "../../components/GuidedLearningWizard";
 import CompareStrategies from "../../components/CompareStrategies";
 import RetrievalSimulator from "../../components/RetrievalSimulator";
 import BenchmarkCompare from "../../components/BenchmarkCompare";
+import EmptyState from "../../components/EmptyState";
+import ProductTour from "../../components/ProductTour";
+import MobileSidebar from "../../components/MobileSidebar";
+import LoadingTimeline from "../../components/LoadingTimeline";
+import { DEMO_DATASETS } from "../../lib/demo-datasets";
 
 import { FileMetadata, chunkText, checkBackendHealth, generateSemanticWorkspace } from "../../lib/api";
 import { Chunk, ChunkParams, simulateChunking } from "../../lib/fallback-engine";
@@ -69,7 +76,15 @@ export default function Playground() {
 
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [activeTab, setActiveTab] = useState<"visualizer" | "density" | "semantic" | "retrieval" | "benchmark">("visualizer");
-  
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  const handleLoadDemo = (key: string) => {
+    const demo = DEMO_DATASETS[key];
+    if (demo) {
+      handleUploadSuccess(demo);
+    }
+  };
+
   // Document State
   const [documentMetadata, setDocumentMetadata] = useState<FileMetadata | null>(null);
   
@@ -137,6 +152,36 @@ export default function Playground() {
   useEffect(() => {
     checkBackendHealth().then(setIsBackendOnline);
   }, []);
+
+  // 1. Restore state from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedStrategy = localStorage.getItem("chunkscope-workspace-strategy");
+      const savedParams = localStorage.getItem("chunkscope-workspace-params");
+      const savedTab = localStorage.getItem("chunkscope-workspace-active-tab");
+      const savedProjection = localStorage.getItem("chunkscope-workspace-projection-method");
+
+      if (savedStrategy) setStrategy(savedStrategy);
+      if (savedParams) setParams(JSON.parse(savedParams));
+      if (savedTab) setActiveTab(savedTab as any);
+      if (savedProjection) setProjectionMethod(savedProjection);
+    } catch (e) {
+      console.warn("Failed to load workspace states from localStorage:", e);
+    }
+  }, []);
+
+  // 2. Persist state to localStorage on state changes
+  useEffect(() => {
+    if (!documentMetadata) return;
+    try {
+      localStorage.setItem("chunkscope-workspace-strategy", strategy);
+      localStorage.setItem("chunkscope-workspace-params", JSON.stringify(params));
+      localStorage.setItem("chunkscope-workspace-active-tab", activeTab);
+      localStorage.setItem("chunkscope-workspace-projection-method", projectionMethod);
+    } catch (e) {
+      console.warn("Failed to save workspace states to localStorage:", e);
+    }
+  }, [strategy, params, activeTab, projectionMethod, documentMetadata]);
 
   // Keyboard shortcut Ctrl+K to open Command Palette
   useEffect(() => {
@@ -338,6 +383,9 @@ export default function Playground() {
       {/* 0. Beginner Landing Splash Overlay */}
       {showSplash && <LandingSplash onChoose={handleSplashChoose} />}
 
+      {/* Product walkthrough tour */}
+      {!showSplash && <ProductTour onComplete={() => {}} />}
+
       {/* Animated Document Scanner overlay */}
       <ScannerOverlay
         isVisible={isScanning}
@@ -414,65 +462,74 @@ export default function Playground() {
         </div>
       </header>
 
-      {/* 2. Main Layout Grid: Refactored into a 3-column independently scrolling viewport */}
-      <main className="flex-1 w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-64px)] overflow-hidden">
-        
-        {/* ============================================================== */}
-        {/* COLUMN 1: DOCUMENT INGESTION & USER JOURNEY (Width: 1/5)       */}
-        {/* ============================================================== */}
-        <section className="lg:col-span-1 h-full overflow-y-auto pr-1 flex flex-col space-y-6 scrollbar-thin pb-6 border-r border-border/40 pr-4">
-          {/* Upload card */}
-          <div className={`space-y-2 transition-all ${wizardStep === 1 && isLearningMode ? "ring-2 ring-primary p-1 rounded-xl" : ""}`}>
-            <div className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-              <FileText className="h-4 w-4 text-primary" />
-              <span>1. Load Document</span>
-            </div>
+      {/* 2. Onboarding Empty State vs Main Grid Workspace */}
+      {!documentMetadata ? (
+        <div className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start overflow-y-auto scrollbar-none py-10">
+          <div className="lg:col-span-2">
+            <EmptyState onLoadDemo={handleLoadDemo} isBackendOnline={isBackendOnline} />
+          </div>
+          <div className="glass-panel border border-border p-6 rounded-2xl bg-card/45 space-y-4 shadow-xl">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block pb-1 border-b border-border/40">
+              Upload custom Document
+            </span>
             <DocumentUpload onUploadSuccess={handleUploadSuccess} isBackendOnline={isBackendOnline} />
           </div>
+        </div>
+      ) : (
+        <main className="flex-1 w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-64px)] overflow-hidden">
+          
+          {/* ============================================================== */}
+          {/* COLUMN 1: DOCUMENT INGESTION & USER JOURNEY (Width: 1/5)       */}
+          {/* ============================================================== */}
+          <section className="lg:col-span-1 h-full overflow-y-auto pr-1 flex flex-col space-y-6 scrollbar-thin pb-6 border-r border-border/40 pr-4">
+            {/* Upload card */}
+            <div className={`space-y-2 transition-all ${wizardStep === 1 && isLearningMode ? "ring-2 ring-primary p-1 rounded-xl" : ""}`}>
+              <div className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                <FileText className="h-4 w-4 text-primary" />
+                <span>1. Load Document</span>
+              </div>
+              <DocumentUpload onUploadSuccess={handleUploadSuccess} isBackendOnline={isBackendOnline} />
+            </div>
 
-          {documentMetadata && (
-            <>
-              {/* Document details box */}
-              <div className="glass-panel p-4 rounded-xl border border-border bg-card/45 space-y-2 text-xs">
-                <div className="font-semibold text-foreground truncate border-b border-border pb-1.5 flex items-center justify-between">
-                  <span className="truncate">{documentMetadata.filename}</span>
-                  <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-sans uppercase">Loaded</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-muted-foreground font-mono text-[10px]">
-                  <div>Words: <b className="text-foreground">{documentMetadata.word_count}</b></div>
-                  <div>Chars: <b className="text-foreground">{documentMetadata.char_count}</b></div>
-                  <div className="col-span-2 pt-1 border-t border-border/40">
-                    Tokens (Est): <b className="text-primary font-bold">{documentMetadata.token_count}</b>
-                  </div>
+            {/* Document details box */}
+            <div className="glass-panel p-4 rounded-xl border border-border bg-card/45 space-y-2 text-xs">
+              <div className="font-semibold text-foreground truncate border-b border-border pb-1.5 flex items-center justify-between">
+                <span className="truncate">{documentMetadata.filename}</span>
+                <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-sans uppercase">Loaded</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-muted-foreground font-mono text-[10px]">
+                <div>Words: <b className="text-foreground">{documentMetadata.word_count}</b></div>
+                <div>Chars: <b className="text-foreground">{documentMetadata.char_count}</b></div>
+                <div className="col-span-2 pt-1 border-t border-border/40">
+                  Tokens (Est): <b className="text-primary font-bold">{documentMetadata.token_count}</b>
                 </div>
               </div>
+            </div>
 
-              {/* Learning Checklist Progress vertical list (Moved to Left Sidebar Explorer) */}
-              <LearningJourney
-                currentStep={wizardStep}
-                hasDocument={!!documentMetadata}
-                onSelectStep={(step) => {
-                  setWizardStep(step);
-                  // Auto-switch tabs to match visual representations with active tutorial guide steps
-                  if (step <= 4) {
-                    setActiveTab("visualizer");
-                  } else if (step === 5) {
-                    setActiveTab("semantic");
-                  } else if (step === 6) {
-                    setActiveTab("retrieval");
-                  } else if (step === 7) {
-                    setActiveTab("visualizer");
-                  }
-                }}
-              />
-            </>
-          )}
-        </section>
+            {/* Learning Checklist Progress vertical list (Moved to Left Sidebar Explorer) */}
+            <LearningJourney
+              currentStep={wizardStep}
+              hasDocument={!!documentMetadata}
+              onSelectStep={(step) => {
+                setWizardStep(step);
+                // Auto-switch tabs to match visual representations with active tutorial guide steps
+                if (step <= 4) {
+                  setActiveTab("visualizer");
+                } else if (step === 5) {
+                  setActiveTab("semantic");
+                } else if (step === 6) {
+                  setActiveTab("retrieval");
+                } else if (step === 7) {
+                  setActiveTab("visualizer");
+                }
+              }}
+            />
+          </section>
 
-        {/* ============================================================== */}
-        {/* COLUMN 2: LIVE VISUALIZATION VIEWPORT (Width: 2/5 - CENTER FOCUS) */}
-        {/* ============================================================== */}
-        <section className="lg:col-span-2 h-full overflow-y-auto px-1 flex flex-col space-y-6 scrollbar-thin pb-6 px-2">
+          {/* ============================================================== */}
+          {/* COLUMN 2: LIVE VISUALIZATION VIEWPORT (Width: 2/5 - CENTER FOCUS) */}
+          {/* ============================================================== */}
+          <section className="lg:col-span-2 h-full overflow-y-auto px-1 flex flex-col space-y-6 scrollbar-thin pb-6 px-2">
           {/* Main workspace navigation tabs */}
           {documentMetadata && (
             <div className="flex justify-between items-center border-b border-border pb-2 shrink-0">
@@ -894,6 +951,77 @@ export default function Playground() {
           )}
         </section>
       </main>
+      )}
+
+      {/* Mobile Parameters Toggle FAB */}
+      {documentMetadata && (
+        <button
+          onClick={() => setIsMobileDrawerOpen(true)}
+          className="lg:hidden fixed bottom-6 right-6 z-30 p-3.5 bg-primary text-primary-foreground rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/45"
+          aria-label="Open strategy parameters drawer"
+        >
+          <Sliders className="h-5.5 w-5.5 text-white" />
+        </button>
+      )}
+
+      {/* Mobile Drawer Sidebar */}
+      {documentMetadata && (
+        <MobileSidebar isOpen={isMobileDrawerOpen} onClose={() => setIsMobileDrawerOpen(false)}>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                <Sliders className="h-4 w-4 text-primary" />
+                <span>Split Strategy</span>
+              </div>
+              <StrategyCard
+                selectedStrategy={strategy}
+                onSelect={(s) => {
+                  setChunks([]);
+                  setStrategy(s);
+                }}
+                isLearningMode={isLearningMode}
+              />
+            </div>
+
+            <div className="border-t border-border/40 pt-4">
+              <ParameterPanel
+                strategy={strategy}
+                params={params}
+                onChange={setParams}
+                isLearningMode={isLearningMode}
+              />
+            </div>
+
+            <div className="flex justify-between items-center bg-secondary/35 border border-border p-3 rounded-xl text-xs">
+              <span className="font-semibold text-muted-foreground flex items-center">
+                <Eye className="h-4 w-4 mr-1 text-primary" />
+                Show Expert Analysis
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer font-sans">
+                <input
+                  type="checkbox"
+                  checked={showExpertAnalysis}
+                  onChange={() => setShowExpertAnalysis(!showExpertAnalysis)}
+                  className="sr-only peer"
+                />
+                <div className="w-8 h-4.5 bg-secondary rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            <AnalyticsBoard
+              chunks={chunks}
+              originalTextLength={documentMetadata.text.length}
+              stats={statistics}
+              isLearningMode={!showExpertAnalysis}
+            />
+
+            <CompareStrategies
+              isLearningMode={isLearningMode}
+              activeStrategy={strategy}
+            />
+          </div>
+        </MobileSidebar>
+      )}
 
       {/* Drawer inspector slide-out for selected chunk (With educational Question headers) */}
       <ChunkInspector
